@@ -1,0 +1,424 @@
+// 1. Find things on the page by their id
+const form = document.getElementById("trip-form");
+const newTripSection = document.getElementById("new-trip");
+const tripSection = document.getElementById("trip-section");
+const tripView = document.getElementById("trip-view");
+const newTripButton = document.getElementById("new-trip-button");
+const dayView = document.getElementById("day-view");
+const dayTitle = document.getElementById("day-title");
+const stopList = document.getElementById("stop-list");
+const backButton = document.getElementById("back-button");
+const addStopDetails = document.getElementById("add-stop");
+const stopForm = document.getElementById("stop-form");
+const stopFormTitle = document.getElementById("stop-form-title");
+const stopSubmit = document.getElementById("stop-submit");
+const cancelEditButton = document.getElementById("cancel-edit");
+const suggestionsBox = document.getElementById("suggestions");
+const historyArea = document.getElementById("history-area");
+
+// 2. The app's data
+let trip = null;          // the current trip (null = no trip yet)
+let currentDay = null;    // the day that's open on the day screen
+let editingIndex = null;  // the stop being edited (null = adding a new one)
+let pendingMoves = [];    // suggested time changes waiting for your answer
+
+// 3. Show one screen and hide the others
+function showScreen(id) {
+  // Every <section> is a screen: show the one we want, hide the rest
+  for (const section of document.querySelectorAll("section")) {
+    section.hidden = section.id !== id;
+  }
+  window.scrollTo(0, 0);
+}
+
+// 4. Save the trip on this device
+function saveTrip() {
+  localStorage.setItem("trip", JSON.stringify(trip));
+}
+
+// 5. When "Create trip" is pressed, run this
+form.addEventListener("submit", function (event) {
+  event.preventDefault(); // stop the page from reloading
+
+  const newTrip = {
+    name: document.getElementById("trip-name").value,
+    destination: document.getElementById("trip-destination").value,
+    start: document.getElementById("trip-start").value,
+    end: document.getElementById("trip-end").value,
+  };
+
+  if (newTrip.end < newTrip.start) {
+    alert("Departure date can't be before arrival date.");
+    return;
+  }
+
+  if (trip && !confirm("This will replace your current trip. Continue?")) {
+    showTrip(); // changed your mind: go back to your current trip
+    return;
+  }
+
+  newTrip.days = makeDays(newTrip.start, newTrip.end);
+  trip = newTrip;
+  saveTrip();
+  showTrip();
+});
+
+// 6. Make one day for each date from arrival to departure
+function makeDays(start, end) {
+  const days = [];
+  const date = new Date(start + "T12:00"); // midday avoids time-zone surprises
+  const last = new Date(end + "T12:00");
+
+  while (date <= last) {
+    days.push({
+      number: days.length + 1,
+      date: date.toISOString().slice(0, 10),
+      label: date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" }),
+      focus: "",
+      stops: [],
+    });
+    date.setDate(date.getDate() + 1);
+  }
+  return days;
+}
+
+// 7. Show the trip, with a button for each day
+function showTrip() {
+  let html = `<h2>${trip.name}</h2>`;
+  html += `<p>${trip.destination}</p>`;
+  for (let i = 0; i < trip.days.length; i++) {
+    const day = trip.days[i];
+    html += `<button class="day-button" onclick="openDay(${i})">Day ${day.number} — ${day.label}</button>`;
+  }
+  tripView.innerHTML = html;
+  showScreen("trip-section");
+}
+
+// 8. Open one day on its own screen
+function openDay(i) {
+  currentDay = trip.days[i];
+  dayTitle.textContent = `Day ${currentDay.number} — ${currentDay.label}`;
+  hideSuggestions();
+  resetStopForm();
+  showScreen("day-view"); // show the screen first, so the map knows its size
+  showStops();
+}
+
+// 9. Time helpers: "10:30" <-> 630 (minutes since midnight)
+function toMinutes(time) {
+  const parts = time.split(":");
+  return Number(parts[0]) * 60 + Number(parts[1]);
+}
+
+function toTime(minutes) {
+  const hours = Math.floor(minutes / 60) % 24;
+  const mins = minutes % 60;
+  return String(hours).padStart(2, "0") + ":" + String(mins).padStart(2, "0");
+}
+
+// 10. Show the open day's stops as a timeline (and on the map)
+function showStops() {
+  const stops = currentDay.stops;
+
+  // Put the stops in time order
+  stops.sort(function (a, b) {
+    return toMinutes(a.time) - toMinutes(b.time);
+  });
+
+  showHistory();
+  updateMap();
+
+  if (stops.length === 0) {
+    stopList.innerHTML = "<p>No stops yet.</p>";
+    return;
+  }
+
+  let html = "";
+  for (let i = 0; i < stops.length; i++) {
+    const stop = stops[i];
+    const end = toMinutes(stop.time) + stop.duration;
+
+    // If the stop was moved, show its original time crossed out
+    let timeText = `${stop.time}–${toTime(end)}`;
+    if (stop.originalTime && stop.originalTime !== stop.time) {
+      timeText = `<s>${stop.originalTime}</s>${timeText}`;
+    }
+
+    html += `<div class="stop" id="stop-${i}">`;
+    html += `<div><span class="stop-time">${timeText}</span>`;
+    html += `<span class="badge ${stop.type}">${stop.type}</span></div>`;
+    html += `<div class="stop-name">${i + 1}. ${stop.name}</div>`;
+    if (stop.address) {
+      html += `<div class="small">📍 ${stop.address}</div>`;
+    }
+    if (stop.notes) {
+      html += `<div class="small">📝 ${stop.notes}</div>`;
+    }
+    html += wishlistForStop(stop);
+    const previous = stops[i - 1]; // undefined for the first stop
+    const fromText = previous ? `from ${previous.name}` : "from where I am";
+    html += `<a class="directions" href="${appleMapsLink(stop, previous)}" target="_blank">🧭 Directions ${fromText}</a><br>`;
+    html += `<button class="edit-button" onclick="editStop(${i})">Edit</button>`;
+    html += `<button class="edit-button" onclick="unscheduleStop(${i})">Move to Places</button>`;
+    html += `<button class="delete-button" onclick="deleteStop(${i})">Delete</button>`;
+    html += `</div>`;
+
+    // The gap between this stop and the next one
+    const next = stops[i + 1];
+    if (next) {
+      const arrive = end + stop.travel;
+      const spare = toMinutes(next.time) - arrive;
+      let gapText = `🚶 ${stop.travel} min to next stop`;
+      if (spare > 0) {
+        gapText += ` · ${spare} min free`;
+      }
+      if (spare < 0) {
+        gapText = `<span class="warning">⚠️ ${gapText} · ${-spare} min short</span>`;
+      }
+      if (stop.lat) {
+        html += `<button class="edit-button" onclick="showOnMap(${i})">📍 Map</button>`;
+      }
+      html += `<button class="edit-button" onclick="editStop(${i})">Edit</button>`;
+      html += `<div class="gap">${gapText}</div>`;
+    }
+  }
+  stopList.innerHTML = html;
+}
+
+// 11. Delete a stop (always ask first)
+function deleteStop(i) {
+  const stop = currentDay.stops[i];
+  if (!confirm(`Delete "${stop.name}"?`)) {
+    return;
+  }
+  hideSuggestions();
+  resetStopForm(); // in case you were editing a stop
+  remember(`Deleted ${stop.name}`);
+  currentDay.stops.splice(i, 1);
+  saveTrip();
+  showStops();
+}
+
+// 12. Edit a stop: fill the form with its details
+function editStop(i) {
+  const stop = currentDay.stops[i];
+  editingIndex = i;
+  hideSuggestions();
+
+  document.getElementById("stop-name").value = stop.name;
+  document.getElementById("stop-type").value = stop.type;
+  document.getElementById("stop-time").value = stop.time;
+  document.getElementById("stop-duration").value = stop.duration;
+  document.getElementById("stop-travel").value = stop.travel;
+  document.getElementById("stop-address").value = stop.address;
+  document.getElementById("stop-notes").value = stop.notes;
+  setFormPosition(stop.lat, stop.lng);
+
+  stopFormTitle.textContent = `Edit: ${stop.name}`;
+  stopSubmit.textContent = "Save changes";
+  cancelEditButton.hidden = false;
+  addStopDetails.open = true;
+  addStopDetails.scrollIntoView({ behavior: "smooth" });
+}
+
+// 13. Put the form back to "Add a stop"
+function resetStopForm() {
+  editingIndex = null;
+  stopForm.reset();
+  setFormPosition(null, null);
+  stopFormTitle.textContent = "+ Add a stop";
+  stopSubmit.textContent = "Add stop";
+  cancelEditButton.hidden = true;
+  addStopDetails.open = false;
+}
+
+// 14. When the stop form is submitted: add a new stop, or save the edited one
+stopForm.addEventListener("submit", function (event) {
+  event.preventDefault();
+
+  const stop = {
+    name: document.getElementById("stop-name").value,
+    type: document.getElementById("stop-type").value,
+    time: document.getElementById("stop-time").value,
+    duration: Number(document.getElementById("stop-duration").value),
+    travel: Number(document.getElementById("stop-travel").value),
+    address: document.getElementById("stop-address").value,
+    notes: document.getElementById("stop-notes").value,
+    lat: formLat,
+    lng: formLng,
+  };
+
+  if (editingIndex === null) {
+    remember(`Added ${stop.name}`);
+    currentDay.stops.push(stop);
+  } else {
+    const oldStop = currentDay.stops[editingIndex];
+    remember(`Edited ${oldStop.name}`);
+    if (oldStop.originalTime) {
+      stop.originalTime = oldStop.originalTime; // keep the time it was first planned for
+    }
+    currentDay.stops[editingIndex] = stop;
+  }
+
+  saveTrip();
+  resetStopForm();
+  showStops(); // this also puts the stops in time order
+  showSuggestions(stop, planChanges(stop));
+});
+
+// 15. Work out what a changed stop does to the rest of the day
+function planChanges(changedStop) {
+  const stops = currentDay.stops;
+  const moves = [];  // stops that need a new time
+  const notes = [];  // other things to tell you
+  const start = stops.indexOf(changedStop);
+
+  // The earliest time you could arrive at the next stop
+  let ready = toMinutes(changedStop.time) + changedStop.duration + changedStop.travel;
+
+  for (let i = start + 1; i < stops.length; i++) {
+    const stop = stops[i];
+    const planned = toMinutes(stop.time);
+
+    // On time? Then the free time soaks up the delay and nothing after this changes
+    if (ready <= planned) {
+      if (stop.type === "fixed" && moves.length > 0) {
+        notes.push(`✅ Keep ${stop.name} at ${stop.time} unchanged.`);
+      }
+      break;
+    }
+
+    if (stop.type === "fixed") {
+      // Fixed stops never move: warn instead
+      notes.push(`⚠️ You'd arrive ${ready - planned} min late for ${stop.name} (fixed at ${stop.time}). Consider shortening or skipping something before it.`);
+      ready = planned + stop.duration + stop.travel; // a booking still ends at its usual time
+    } else {
+      // Flexible and bonus stops move later, just enough to fit
+      moves.push({ stop: stop, newTime: toTime(ready) });
+      ready = ready + stop.duration + stop.travel;
+    }
+  }
+
+  return { moves: moves, notes: notes };
+}
+
+// 16. Show the "Your schedule has changed" box
+function showSuggestions(changedStop, plan) {
+  if (plan.moves.length === 0 && plan.notes.length === 0) {
+    hideSuggestions();
+    return;
+  }
+  pendingMoves = plan.moves;
+
+  const end = toTime(toMinutes(changedStop.time) + changedStop.duration);
+  let html = `<h3>Your schedule has changed</h3>`;
+  html += `<p>${changedStop.name} now ends at ${end}. Suggested adjustments:</p>`;
+  html += `<ul>`;
+  for (const move of plan.moves) {
+    if (move.stop.type === "bonus") {
+      html += `<li>Move ${move.stop.name} to ${move.newTime} (it's a bonus stop, so you could skip it instead)</li>`;
+    } else {
+      html += `<li>Move ${move.stop.name} to ${move.newTime}</li>`;
+    }
+  }
+  for (const note of plan.notes) {
+    html += `<li>${note}</li>`;
+  }
+  html += `</ul>`;
+
+  if (plan.moves.length > 0) {
+    html += `<button onclick="acceptChanges()">Accept</button> `;
+    html += `<button onclick="hideSuggestions()">No thanks, I'll adjust it myself</button>`;
+  } else {
+    html += `<button onclick="hideSuggestions()">OK</button>`;
+  }
+
+  suggestionsBox.innerHTML = html;
+  suggestionsBox.hidden = false;
+  suggestionsBox.scrollIntoView({ behavior: "smooth" });
+}
+
+// 17. Your answer to the suggestions
+function acceptChanges() {
+  remember("Accepted suggested changes");
+  for (const move of pendingMoves) {
+    if (!move.stop.originalTime) {
+      move.stop.originalTime = move.stop.time; // remember where it started
+    }
+    move.stop.time = move.newTime;
+  }
+  saveTrip();
+  hideSuggestions();
+  showStops();
+}
+
+function hideSuggestions() {
+  pendingMoves = [];
+  suggestionsBox.hidden = true;
+}
+
+// 18. Undo and change history
+function remember(label) {
+  if (!currentDay.history) {
+    currentDay.history = [];
+  }
+  currentDay.history.push({
+    label: label,
+    at: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
+    stops: JSON.stringify(currentDay.stops), // a snapshot of the day before the change
+  });
+  if (currentDay.history.length > 20) {
+    currentDay.history.shift(); // only keep the last 20 changes
+  }
+}
+
+function undo() {
+  const last = currentDay.history.pop();
+  if (!last) {
+    return;
+  }
+  currentDay.stops = JSON.parse(last.stops);
+  hideSuggestions();
+  resetStopForm();
+  saveTrip();
+  showStops();
+}
+
+function showHistory() {
+  const history = currentDay.history || [];
+  if (history.length === 0) {
+    historyArea.innerHTML = "";
+    return;
+  }
+
+  const last = history[history.length - 1];
+  let html = `<button onclick="undo()">↩️ Undo: ${last.label}</button>`;
+  html += `<details><summary>Change history (${history.length})</summary><ul>`;
+  for (let i = history.length - 1; i >= 0; i--) {
+    html += `<li>${history[i].at} — ${history[i].label}</li>`;
+  }
+  html += `</ul></details>`;
+  historyArea.innerHTML = html;
+}
+
+// 19. Buttons
+newTripButton.addEventListener("click", function () {
+  showScreen("new-trip");
+});
+
+backButton.addEventListener("click", function () {
+  showScreen("trip-section");
+});
+
+cancelEditButton.addEventListener("click", function () {
+  resetStopForm();
+});
+
+// 20. When the page opens: show the saved trip, or the new trip form
+const savedTrip = localStorage.getItem("trip");
+if (savedTrip) {
+  trip = JSON.parse(savedTrip);
+  showTrip();
+} else {
+  showScreen("new-trip");
+}

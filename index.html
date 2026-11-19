@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Travel Companion</title>
+
+  <!-- Home screen app: name, icon and colours -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="apple-mobile-web-app-title" content="Travel">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#f6f1e4">
+
+  <!-- Leaflet map library, loaded from a CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    body  { font-family: sans-serif; padding: 16px; }
+    label { display: block; margin-bottom: 12px; }
+    input, select, textarea { display: block; width: 100%; font-size: 16px; padding: 8px; box-sizing: border-box; }
+    button { font-size: 16px; padding: 10px 16px; }
+    .day-button { display: block; width: 100%; text-align: left; margin-bottom: 8px; }
+    .nav-button { display: block; width: 100%; margin: 16px 0 8px; }
+    summary { font-size: 18px; padding: 12px 0; cursor: pointer; }
+    .small-summary { font-size: 15px; padding: 8px 0; }
+
+    /* Timeline */
+    .stop { border: 1px solid #ddd; border-radius: 10px; padding: 12px; }
+    .stop-time { font-weight: bold; }
+    .stop-name { font-size: 18px; margin: 4px 0; }
+    .small { font-size: 14px; color: #555; margin-top: 4px; }
+    .badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; color: white; margin-left: 6px; }
+    .fixed { background: #3a3a3a; }
+    .flexible { background: #6b7a3a; }
+    .bonus { background: #6a8caf; }
+    .gap { font-size: 14px; color: #666; margin: 6px 0 10px 12px; }
+    .warning { color: #b3261e; }
+    .delete-button { font-size: 14px; padding: 4px 10px; margin-top: 8px; }
+    .edit-button { font-size: 14px; padding: 4px 10px; margin-top: 8px; margin-right: 6px; }
+    #suggestions { background: #f6f1e4; border: 1px solid #d8cfb4; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+    #suggestions h3 { margin-top: 0; }
+    s { color: #999; margin-right: 4px; }
+    #history-area { margin: 12px 0; }
+
+    /* Don't Forget */
+    .item { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+    .item.bought { opacity: 0.5; }
+    .item.bought .item-name { text-decoration: line-through; }
+    .check { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; }
+    .check input { width: 22px; height: 22px; flex-shrink: 0; }
+    .reminder { background: #f6f1e4; border-radius: 8px; padding: 6px 8px; margin-top: 8px; font-size: 14px; }
+    .small-button { font-size: 13px; padding: 2px 8px; margin-left: 6px; }
+
+    /* Map */
+    #day-map { height: 260px; border-radius: 10px; margin-bottom: 12px; }
+    .pin { width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; border: 2px solid white;
+           color: white; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center;
+           box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+    .directions { display: inline-block; font-size: 14px; margin-top: 6px; }
+    .stop { transition: background 0.4s; }
+    .stop.highlight { background: #f6f1e4; border-color: #6b7a3a; }
+  </style>
+</head>
+<body>
+  <h1>My Travel Companion</h1>
+
+  <!-- Screen 1: create a trip -->
+  <section id="new-trip">
+    <h2>New trip</h2>
+    <form id="trip-form">
+      <label>Trip name
+        <input id="trip-name" type="text" placeholder="Tokyo 2026" required>
+      </label>
+      <label>Destination
+        <input id="trip-destination" type="text" placeholder="Tokyo, Japan">
+      </label>
+      <label>Arrival date
+        <input id="trip-start" type="date" required>
+      </label>
+      <label>Departure date
+        <input id="trip-end" type="date" required>
+      </label>
+      <button type="submit">Create trip</button>
+    </form>
+    <p class="small">Already have a trip on another device?</p>
+    <button type="button" onclick="chooseImportFile()">📥 Import a trip backup</button>
+  </section>
+
+  <!-- Screen 2: the trip and its days -->
+  <section id="trip-section" hidden>
+    <div id="trip-view"></div>
+    <button class="nav-button" onclick="openPlaces()">⭐ Places I'd Love to Visit</button>
+    <button class="nav-button" onclick="openWishlist()">🛍️ Don't Forget</button>
+    <button class="nav-button" onclick="exportTrip()">📤 Export trip (backup / AirDrop)</button>
+    <button class="nav-button" onclick="chooseImportFile()">📥 Import a trip backup</button>
+    <button id="new-trip-button">Start a new trip</button>
+  </section>
+
+  <!-- Screen 3: one day -->
+  <section id="day-view" hidden>
+    <button id="back-button">← All days</button>
+    <h2 id="day-title"></h2>
+    <div id="day-map" hidden></div>
+    <p id="map-hint" class="small">Tip: give a stop an address (or a real place name) and tap 🔍 Find on map to see it here.</p>
+    <div id="suggestions" hidden></div>
+    <div id="stop-list"></div>
+    <div id="history-area"></div>
+
+    <details id="add-stop">
+      <summary id="stop-form-title">+ Add a stop</summary>
+      <form id="stop-form">
+        <label>Place name
+          <input id="stop-name" type="text" placeholder="Shibuya Sky" required>
+        </label>
+        <label>Type
+          <select id="stop-type">
+            <option value="fixed">Fixed – must happen at this time</option>
+            <option value="flexible" selected>Flexible – can be moved</option>
+            <option value="bonus">Bonus – only if there's time</option>
+          </select>
+        </label>
+        <label>Start time
+          <input id="stop-time" type="time" required>
+        </label>
+        <label>How long (minutes)
+          <input id="stop-duration" type="number" min="5" step="5" value="60" required>
+        </label>
+        <label>Travel to next stop (minutes)
+          <input id="stop-travel" type="number" min="0" step="5" value="15">
+        </label>
+        <label>Address
+          <input id="stop-address" type="text">
+        </label>
+        <button type="button" onclick="findOnMap()">🔍 Find on map</button>
+        <p class="small">…or tap the map at the top to place the pin yourself.</p>
+        <p id="find-result" class="small"></p>
+        <p id="find-result" class="small"></p>
+        <label>Notes
+          <textarea id="stop-notes" rows="3"></textarea>
+        </label>
+        <button type="submit" id="stop-submit">Add stop</button>
+        <button type="button" id="cancel-edit" hidden>Cancel</button>
+      </form>
+    </details>
+  </section>
+
+  <!-- Screen 4: Don't Forget (wishlist) -->
+  <section id="wishlist-view" hidden>
+    <button onclick="showTrip()">← Back to trip</button>
+    <h2>🛍️ Don't Forget</h2>
+    <p id="wishlist-summary"></p>
+    <div id="wishlist-list"></div>
+
+    <details id="add-item">
+      <summary>+ Add an item</summary>
+      <form id="wishlist-form">
+        <label>Item
+          <input id="item-name" type="text" placeholder="Leather handbag" required>
+        </label>
+        <label>Where to buy (separate shops with commas)
+          <input id="item-shops" type="text" list="place-suggestions" placeholder="Isetan, Beams">
+          <datalist id="place-suggestions"></datalist>
+        </label>
+        <label>Estimated price
+          <input id="item-price" type="text" placeholder="¥15,000">
+        </label>
+        <label>Priority
+          <select id="item-priority">
+            <option value="must">⭐ Must-have</option>
+            <option value="nice" selected>Nice to have</option>
+          </select>
+        </label>
+        <label>Link
+          <input id="item-link" type="url" placeholder="https://…">
+        </label>
+        <label>Notes
+          <textarea id="item-notes" rows="2"></textarea>
+        </label>
+        <button type="submit">Add item</button>
+      </form>
+    </details>
+  </section>
+
+  <!-- Screen 5: Places I'd Love to Visit -->
+  <section id="places-view" hidden>
+    <button onclick="showTrip()">← Back to trip</button>
+    <h2>⭐ Places I'd Love to Visit</h2>
+    <p class="small">Saved places that aren't in a day yet.</p>
+    <div id="place-list"></div>
+
+    <details id="add-place">
+      <summary>+ Save a place</summary>
+      <form id="place-form">
+        <label>Place name
+          <input id="place-name" type="text" placeholder="Little bookstore" required>
+        </label>
+        <label>Address
+          <input id="place-address" type="text">
+        </label>
+        <label>About how long (minutes)
+          <input id="place-duration" type="number" min="5" step="5" value="45" required>
+        </label>
+        <label>Notes
+          <textarea id="place-notes" rows="2"></textarea>
+        </label>
+        <button type="submit">Save place</button>
+      </form>
+    </details>
+  </section>
+
+  <script src="app.js"></script>
+  <script src="wishlist.js"></script>
+  <script src="places.js"></script>
+  <input id="import-file" type="file" hidden>
+  <script src="map.js"></script>
+  <script src="backup.js"></script>
+</body>
+</body>
+</html>
