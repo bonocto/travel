@@ -107,7 +107,7 @@
     <div id="wishlist-list"></div>
 
     <details id="add-item">
-      <summary>+ Add an item</summary>
+      <summary id="item-form-title">+ Add an item</summary>
       <form id="wishlist-form">
         <label>Item
           <input id="item-name" type="text" placeholder="Leather handbag" required>
@@ -131,7 +131,8 @@
         <label>Notes
           <textarea id="item-notes" rows="2"></textarea>
         </label>
-        <button type="submit">Add item</button>
+        <button type="submit" id="item-submit">Add item</button>
+        <button type="button" id="item-cancel" onclick="resetItemForm()" hidden>Cancel</button>
       </form>
     </details>
   </section>

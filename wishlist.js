@@ -6,6 +6,10 @@ const wishlistList = document.getElementById("wishlist-list");
 const wishlistSummary = document.getElementById("wishlist-summary");
 const addItemDetails = document.getElementById("add-item");
 const placeSuggestions = document.getElementById("place-suggestions");
+const itemFormTitle = document.getElementById("item-form-title");
+const itemSubmit = document.getElementById("item-submit");
+const itemCancel = document.getElementById("item-cancel");
+let editingItemIndex = null; // null = adding a new item, a number = editing that item
 
 // 2. The wishlist lives inside the trip (created the first time it's needed)
 function getWishlist() {
@@ -18,7 +22,7 @@ function getWishlist() {
 // 3. Open the Don't Forget screen
 function openWishlist() {
   fillPlaceSuggestions();
-  addItemDetails.open = false;
+  resetItemForm();
   showWishlist();
   showScreen("wishlist-view");
 }
@@ -103,6 +107,7 @@ function showWishlist() {
     if (item.link) {
       html += `<div class="small">🔗 <a href="${item.link}" target="_blank">Open link</a></div>`;
     }
+    html += `<button class="edit-button" onclick="editItem(${i})">Edit</button>`;
     html += `<button class="edit-button" onclick="choosePhoto(${i})">📷 ${item.photo ? "Change photo" : "Add photo"}</button>`;
     html += `<button class="edit-button" onclick="pastePhoto(${i})">📋 Paste photo</button>`;
     if (item.photo) {
@@ -128,28 +133,64 @@ function deleteItem(i) {
   if (!confirm(`Delete "${item.name}"?`)) {
     return;
   }
+  resetItemForm(); // in case you were editing it
   getWishlist().splice(i, 1);
   saveTrip();
   showWishlist();
 }
 
-// 10. When "Add item" is pressed, save it
+// 10. Edit an item: fill the form with its details
+function editItem(i) {
+  const item = getWishlist()[i];
+  editingItemIndex = i;
+
+  document.getElementById("item-name").value = item.name;
+  document.getElementById("item-shops").value = item.shops;
+  document.getElementById("item-price").value = item.price;
+  document.getElementById("item-priority").value = item.priority;
+  document.getElementById("item-link").value = item.link;
+  document.getElementById("item-notes").value = item.notes;
+
+  itemFormTitle.textContent = `Edit: ${item.name}`;
+  itemSubmit.textContent = "Save changes";
+  itemCancel.hidden = false;
+  addItemDetails.open = true;
+  addItemDetails.scrollIntoView({ behavior: "smooth" });
+}
+
+// 10b. Put the form back to "Add an item"
+function resetItemForm() {
+  editingItemIndex = null;
+  wishlistForm.reset();
+  itemFormTitle.textContent = "+ Add an item";
+  itemSubmit.textContent = "Add item";
+  itemCancel.hidden = true;
+  addItemDetails.open = false;
+}
+
+// 10c. When the form is saved: add a new item, or update the one being edited
 wishlistForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
-  getWishlist().push({
+  const details = {
     name: document.getElementById("item-name").value,
     shops: document.getElementById("item-shops").value,
     price: document.getElementById("item-price").value,
     priority: document.getElementById("item-priority").value,
     link: document.getElementById("item-link").value,
     notes: document.getElementById("item-notes").value,
-    bought: false,
-  });
+  };
+
+  if (editingItemIndex === null) {
+    details.bought = false;
+    getWishlist().push(details);
+  } else {
+    // Copy the new details onto the old item (its photo and "bought" tick stay)
+    Object.assign(getWishlist()[editingItemIndex], details);
+  }
 
   saveTrip();
-  wishlistForm.reset();
-  addItemDetails.open = false;
+  resetItemForm();
   showWishlist();
 });
 
