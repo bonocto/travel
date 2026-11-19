@@ -174,10 +174,17 @@
   <button id="quick-add" hidden onclick="quickAdd()">+</button>
 
   <input id="import-file" type="file" hidden>
+  <input id="photo-input" type="file" accept="image/*" hidden>
+
+  <!-- Big photo viewer -->
+  <div id="photo-viewer" hidden>
+    <img id="photo-viewer-image" alt="">
+  </div>
 
   <script src="menu.js"></script>
   <script src="app.js"></script>
   <script src="wishlist.js"></script>
+  <script src="photos.js"></script>
   <script src="places.js"></script>
   <script src="map.js"></script>
   <script src="backup.js"></script>

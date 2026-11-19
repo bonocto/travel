@@ -86,6 +86,9 @@ function showWishlist() {
     html += `<input type="checkbox" onchange="toggleBought(${i})" ${item.bought ? "checked" : ""}>`;
     html += `<span class="item-name">${item.priority === "must" ? "⭐ " : ""}${item.name}</span>`;
     html += `</label>`;
+    if (item.photo) {
+      html += `<img class="item-photo" src="${item.photo}" onclick="viewPhoto(${i})" alt="">`;
+    }
     if (item.price) {
       html += `<div class="small">💰 ${item.price}</div>`;
     }
@@ -99,6 +102,11 @@ function showWishlist() {
     }
     if (item.link) {
       html += `<div class="small">🔗 <a href="${item.link}" target="_blank">Open link</a></div>`;
+    }
+    html += `<button class="edit-button" onclick="choosePhoto(${i})">📷 ${item.photo ? "Change photo" : "Add photo"}</button>`;
+    html += `<button class="edit-button" onclick="pastePhoto(${i})">📋 Paste photo</button>`;
+    if (item.photo) {
+      html += `<button class="delete-button" onclick="removePhoto(${i})">Remove photo</button>`;
     }
     html += `<button class="delete-button" onclick="deleteItem(${i})">Delete</button>`;
     html += `</div>`;
@@ -152,7 +160,11 @@ function wishlistForStop(stop) {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     if (!item.bought && soldAt(item, stop.name)) {
-      html += `<div class="reminder">🛍️ Don't forget: ${item.name}`;
+        html += `<div class="reminder">`;
+      if (item.photo) {
+        html += `<img class="reminder-photo" src="${item.photo}" alt="">`;
+      }
+      html += `🛍️ Don't forget: ${item.name}`;
       if (item.price) {
         html += ` (${item.price})`;
       }
