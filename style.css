@@ -1,0 +1,297 @@
+/* style.css — how Farefaren looks */
+
+/* 1. The colour palette. Change a colour here and it changes everywhere. */
+:root {
+  --cream: #f6f1e4;
+  --card: #fffdf8;
+  --soft: #efe8d6;
+  --line: #e6dec9;
+  --olive: #6b7a3a;
+  --charcoal: #3a3a3a;
+  --muted: #8a8476;
+  --blue: #6a8caf;
+  --red: #b3261e;
+  --shadow: 0 2px 12px rgba(58, 52, 35, 0.07);
+  --round: 18px;
+}
+
+/* 2. The page */
+* { box-sizing: border-box; }
+[hidden] { display: none !important; } /* hidden things stay hidden */
+body {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+  background: var(--cream);
+  color: var(--charcoal);
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 3. Headings: a bookish serif that's already built into iPhone and Mac */
+h1, h2, h3, .stop-name, .item-name {
+  font-family: "Iowan Old Style", "Palatino", Georgia, serif;
+  font-weight: 600;
+}
+h1 { font-size: 32px; color: var(--olive); margin: 0 0 20px; letter-spacing: -0.5px; }
+h2 { font-size: 26px; margin: 4px 0 8px; }
+h3 { font-size: 19px; margin: 0 0 8px; }
+p  { margin: 0 0 12px; }
+a  { color: var(--blue); }
+#trip-view p, #wishlist-summary { color: var(--muted); }
+
+/* 4. Forms */
+label { display: block; margin-bottom: 14px; font-size: 14px; font-weight: 600; color: var(--muted); }
+input, select, textarea {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--charcoal);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--olive);
+  box-shadow: 0 0 0 3px rgba(107, 122, 58, 0.15);
+}
+
+/* 5. Buttons: soft rounded "pills" */
+button {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 18px;
+  margin: 4px 6px 4px 0;
+  color: var(--charcoal);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+button:active { transform: scale(0.97); }
+button[type="submit"], #suggestions button:first-of-type {
+  color: white;
+  background: var(--olive);
+  border-color: var(--olive);
+}
+#back-button, section > button:first-child {
+  padding: 6px 0;
+  margin-bottom: 8px;
+  color: var(--olive);
+  background: none;
+  border: none;
+}
+.day-button, .nav-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0 0 10px;
+  padding: 16px 18px;
+  font-size: 17px;
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+}
+.nav-button:first-of-type { margin-top: 24px; }
+#new-trip-button {
+  margin-top: 16px;
+  font-weight: 400;
+  color: var(--muted);
+  background: none;
+  border: none;
+  text-decoration: underline;
+}
+
+/* 6. Fold-out boxes ("+ Add a stop" and friends) */
+details {
+  margin: 18px 0;
+  padding: 0 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+}
+details[open] { padding-bottom: 18px; }
+summary {
+  padding: 15px 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--olive);
+  cursor: pointer;
+  list-style: none;
+}
+summary::-webkit-details-marker { display: none; }
+/* Small fold-outs inside cards stay plain */
+.item details, #history-area details {
+  margin: 8px 0 0;
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+.small-summary, #history-area summary { font-size: 14px; padding: 8px 0; }
+#history-area { margin: 14px 0; }
+#history-area ul { font-size: 14px; color: var(--muted); padding-left: 20px; }
+
+/* 7. Timeline */
+.stop {
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--olive);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+  transition: background 0.4s;
+}
+.stop:has(.badge.fixed) { border-left-color: var(--charcoal); }
+.stop:has(.badge.bonus) { border-left-color: var(--blue); }
+.stop.highlight { background: var(--soft); }
+.stop-time { font-weight: 700; font-size: 15px; }
+.stop-name { font-size: 20px; margin: 4px 0 2px; }
+.small { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: white;
+  border-radius: 999px;
+  vertical-align: 1px;
+}
+.fixed    { background: var(--charcoal); }
+.flexible { background: var(--olive); }
+.bonus    { background: var(--blue); }
+s { color: #b0a998; margin-right: 6px; font-weight: 400; }
+.gap {
+  margin: 0 0 0 26px;
+  padding: 10px 0 10px 16px;
+  border-left: 2px dashed #d6cdb3;
+  font-size: 13px;
+  color: var(--muted);
+}
+.warning { color: var(--red); }
+.directions {
+  display: inline-block;
+  margin: 10px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.edit-button, .delete-button { font-size: 13px; padding: 6px 12px; margin: 6px 6px 0 0; }
+.delete-button { color: var(--red); }
+
+/* 8. "Your schedule has changed" box */
+#suggestions {
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  background: #fbf7ea;
+  border: 1px solid var(--olive);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+}
+#suggestions h3 { color: var(--olive); }
+#suggestions ul { padding-left: 20px; }
+
+/* 9. Don't Forget and Places cards */
+.item {
+  margin-bottom: 10px;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+}
+.item.bought { opacity: 0.5; }
+.item.bought .item-name { text-decoration: line-through; }
+.check { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 18px; font-weight: 400; color: var(--charcoal); }
+.check input { width: 24px; height: 24px; min-height: 0; margin: 0; flex-shrink: 0; accent-color: var(--olive); }
+.reminder { margin-top: 10px; padding: 8px 10px; background: var(--soft); border-radius: 12px; font-size: 14px; }
+.small-button { font-size: 12px; padding: 3px 10px; margin: 0 0 0 6px; }
+
+/* 10. Map */
+#day-map {
+  position: relative;
+  z-index: 0;
+  height: 260px;
+  margin-bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--round);
+  box-shadow: var(--shadow);
+}
+.pin {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: 13px;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* 11. Bottom menu */
+body { padding-bottom: 120px; } /* room so the menu never covers anything */
+#bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  background: rgba(255, 253, 248, 0.94);
+  border-top: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 6px 4px;
+  font-size: 22px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 14px;
+}
+.tab span { font-size: 12px; font-weight: 600; }
+.tab.active { color: var(--olive); background: var(--soft); }
+
+/* 12. Floating + button */
+#quick-add {
+  position: fixed;
+  right: 20px;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 11;
+  width: 58px;
+  height: 58px;
+  margin: 0;
+  padding: 0;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1;
+  color: white;
+  background: var(--olive);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba(107, 122, 58, 0.4);
+}

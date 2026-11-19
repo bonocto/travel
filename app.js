@@ -28,6 +28,7 @@ function showScreen(id) {
   for (const section of document.querySelectorAll("section")) {
     section.hidden = section.id !== id;
   }
+  updateMenu(id);
   window.scrollTo(0, 0);
 }
 
@@ -158,6 +159,9 @@ function showStops() {
     const previous = stops[i - 1]; // undefined for the first stop
     const fromText = previous ? `from ${previous.name}` : "from where I am";
     html += `<a class="directions" href="${appleMapsLink(stop, previous)}" target="_blank">🧭 Directions ${fromText}</a><br>`;
+    if (stop.lat) {
+      html += `<button class="edit-button" onclick="showOnMap(${i})">📍 Map</button>`;
+    }
     html += `<button class="edit-button" onclick="editStop(${i})">Edit</button>`;
     html += `<button class="edit-button" onclick="unscheduleStop(${i})">Move to Places</button>`;
     html += `<button class="delete-button" onclick="deleteStop(${i})">Delete</button>`;
@@ -175,10 +179,7 @@ function showStops() {
       if (spare < 0) {
         gapText = `<span class="warning">⚠️ ${gapText} · ${-spare} min short</span>`;
       }
-      if (stop.lat) {
-        html += `<button class="edit-button" onclick="showOnMap(${i})">📍 Map</button>`;
-      }
-      html += `<button class="edit-button" onclick="editStop(${i})">Edit</button>`;
+      
       html += `<div class="gap">${gapText}</div>`;
     }
   }
@@ -208,7 +209,7 @@ function editStop(i) {
   document.getElementById("stop-name").value = stop.name;
   document.getElementById("stop-type").value = stop.type;
   document.getElementById("stop-time").value = stop.time;
-  document.getElementById("stop-duration").value = stop.duration;
+  document.getElementById("stop-end").value = toTime(toMinutes(stop.time) + stop.duration);  
   document.getElementById("stop-travel").value = stop.travel;
   document.getElementById("stop-address").value = stop.address;
   document.getElementById("stop-notes").value = stop.notes;
@@ -236,11 +237,20 @@ function resetStopForm() {
 stopForm.addEventListener("submit", function (event) {
   event.preventDefault();
 
+  // Work out how long the stop is from its start and end times
+  const startTime = document.getElementById("stop-time").value;
+  const endTime = document.getElementById("stop-end").value;
+  const duration = toMinutes(endTime) - toMinutes(startTime);
+  if (duration <= 0) {
+    alert("The end time needs to be after the start time.");
+    return;
+  }
+
   const stop = {
     name: document.getElementById("stop-name").value,
     type: document.getElementById("stop-type").value,
     time: document.getElementById("stop-time").value,
-    duration: Number(document.getElementById("stop-duration").value),
+    duration: duration,
     travel: Number(document.getElementById("stop-travel").value),
     address: document.getElementById("stop-address").value,
     notes: document.getElementById("stop-notes").value,
@@ -265,6 +275,15 @@ stopForm.addEventListener("submit", function (event) {
   showStops(); // this also puts the stops in time order
   showSuggestions(stop, planChanges(stop));
 });
+
+// 14b. When you pick a start time, suggest an end time 1 hour later (you can change it)
+document.getElementById("stop-time").addEventListener("change", function () {
+  const endInput = document.getElementById("stop-end");
+  if (endInput.value === "") {
+    endInput.value = toTime(toMinutes(this.value) + 60);
+  }
+});
+
 
 // 15. Work out what a changed stop does to the rest of the day
 function planChanges(changedStop) {
