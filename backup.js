@@ -20,6 +20,7 @@ async function exportTrip() {
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: fileName });
+      markBackedUp();
       return;
     } catch (error) {
       if (error.name === "AbortError") return; // you pressed Cancel
@@ -32,6 +33,14 @@ async function exportTrip() {
   link.download = fileName;
   link.click();
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  markBackedUp();
+}
+
+// 2b. Remember when you last made a backup
+function markBackedUp() {
+  trip.lastBackup = new Date().toISOString();
+  saveTrip();
+  showBackupStatus();
 }
 
 // 3. IMPORT step 1: open the file picker

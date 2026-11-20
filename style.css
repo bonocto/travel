@@ -459,3 +459,8 @@ body:has(input:focus, select:focus, textarea:focus) #quick-add {
   border-radius: 50%;
 }
 .cal-block b { padding-right: 22px; } /* leave room for the × */
+
+
+/* 20. Backup reminder and version */
+.backup-due { color: #a8641e; font-weight: 600; }
+#app-status { margin-top: 24px; text-align: center; }

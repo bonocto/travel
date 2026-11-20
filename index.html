@@ -67,8 +67,10 @@
       </form>
     </details>
     <button class="nav-button" onclick="exportTrip()">📤 Export trip (backup / AirDrop)</button>
+    <p id="backup-status" class="small"></p>
     <button class="nav-button" onclick="chooseImportFile()">📥 Import a trip backup</button>
     <button id="new-trip-button">Start a new trip</button>
+    <p id="app-status" class="small"></p>
   </section>
 
   <!-- Screen 3: one day -->
@@ -221,6 +223,7 @@
   <script src="travel.js"></script>
   <script src="hotel.js"></script>
   <script src="calendar.js"></script>
+  <script src="offline.js"></script>
   <script src="backup.js"></script>
   <script src="today.js"></script>
 </body>

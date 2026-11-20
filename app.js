@@ -92,7 +92,28 @@ function showTrip() {
     html += `<button class="day-button" onclick="openDay(${i})">Day ${day.number} — ${day.label}</button>`;
   }
   tripView.innerHTML = html;
+  showBackupStatus();
   showScreen("trip-section");
+}
+
+// 7b. "Last backup: 3 days ago" on the trip screen (orange when it's time for a new one)
+function showBackupStatus() {
+  const status = document.getElementById("backup-status");
+  if (!trip.lastBackup) {
+    status.textContent = "💾 No backup yet. Export a copy to your Mac, just in case.";
+    status.className = "small backup-due";
+    return;
+  }
+  const oneDay = 24 * 60 * 60 * 1000;
+  const days = Math.floor((Date.now() - new Date(trip.lastBackup)) / oneDay);
+  const when = days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`;
+  if (days >= 3) {
+    status.textContent = `💾 Last backup: ${when}. Time for a fresh one?`;
+    status.className = "small backup-due";
+  } else {
+    status.textContent = `💾 Last backup: ${when}`;
+    status.className = "small";
+  }
 }
 
 // 8. Open one day on its own screen
