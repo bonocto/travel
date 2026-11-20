@@ -16,6 +16,6 @@ function showAppStatus() {
   } else if (navigator.serviceWorker.controller) {
     status = "✈️ works offline";
   }
-  document.getElementById("app-status").textContent = `Farefaren v${appVersion} · ${status}`;
+  document.getElementById("app-status").textContent = `Farefarren v${appVersion} · ${status}`;
 }
 showAppStatus();
