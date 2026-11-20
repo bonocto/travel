@@ -127,7 +127,9 @@ function showStops() {
   });
 
   showHistory();
-  updateMap();
+  updateMap(); 
+  showNowNext();
+  showCalendar();
 
   if (stops.length === 0) {
     stopList.innerHTML = "<p>No stops yet.</p>";
@@ -140,12 +142,12 @@ function showStops() {
     const end = toMinutes(stop.time) + stop.duration;
 
     // If the stop was moved, show its original time crossed out
-    let timeText = `${stop.time}–${toTime(end)}`;
+    let timeText = stop.duration > 0 ? `${stop.time}–${toTime(end)}` : stop.time;
     if (stop.originalTime && stop.originalTime !== stop.time) {
       timeText = `<s>${stop.originalTime}</s>${timeText}`;
     }
 
-    html += `<div class="stop" id="stop-${i}">`;
+    html += `<div class="stop ${isHappeningNow(stop) ? "now" : ""}" id="stop-${i}">`;
     html += `<div><span class="stop-time">${timeText}</span>`;
     html += `<span class="badge ${stop.type}">${stop.type}</span></div>`;
     html += `<div class="stop-name">${i + 1}. ${stop.name}</div>`;
@@ -154,6 +156,13 @@ function showStops() {
     }
     if (stop.notes) {
       html += `<div class="small">📝 ${stop.notes}</div>`;
+    }
+    if (stop.closes) {
+      if (end > toMinutes(stop.closes)) {
+        html += `<div class="small warning">🕔 Closes at ${stop.closes}, but you'd be here until ${toTime(end)}</div>`;
+      } else {
+        html += `<div class="small">🕔 Closes at ${stop.closes}</div>`;
+      }
     }
     html += wishlistForStop(stop);
     const previous = stops[i - 1]; // undefined for the first stop
@@ -172,7 +181,7 @@ function showStops() {
     if (next) {
       const arrive = end + stop.travel;
       const spare = toMinutes(next.time) - arrive;
-      let gapText = `🚶 ${stop.travel} min to next stop`;
+      let gapText = `${stop.travelIcon || "🚶"} ${stop.travel} min to next stop`;
       if (spare > 0) {
         gapText += ` · ${spare} min free`;
       }
@@ -180,7 +189,7 @@ function showStops() {
         gapText = `<span class="warning">⚠️ ${gapText} · ${-spare} min short</span>`;
       }
       
-      html += `<div class="gap">${gapText}</div>`;
+        html += `<div class="gap">${gapText}${estimateButtons(i, stop, next)}</div>`;
     }
   }
   stopList.innerHTML = html;
@@ -213,6 +222,7 @@ function editStop(i) {
   document.getElementById("stop-travel").value = stop.travel;
   document.getElementById("stop-address").value = stop.address;
   document.getElementById("stop-notes").value = stop.notes;
+  document.getElementById("stop-closes").value = stop.closes || "";
   setFormPosition(stop.lat, stop.lng);
 
   stopFormTitle.textContent = `Edit: ${stop.name}`;
@@ -254,6 +264,7 @@ stopForm.addEventListener("submit", function (event) {
     travel: Number(document.getElementById("stop-travel").value),
     address: document.getElementById("stop-address").value,
     notes: document.getElementById("stop-notes").value,
+    closes: document.getElementById("stop-closes").value,
     lat: formLat,
     lng: formLng,
   };
@@ -266,6 +277,12 @@ stopForm.addEventListener("submit", function (event) {
     remember(`Edited ${oldStop.name}`);
     if (oldStop.originalTime) {
       stop.originalTime = oldStop.originalTime; // keep the time it was first planned for
+    }
+    if (oldStop.hotel) {
+      stop.hotel = oldStop.hotel; // keep it marked as a hotel stop
+    }
+    if (oldStop.travelIcon && oldStop.travel === stop.travel) {
+      stop.travelIcon = oldStop.travelIcon; // keep 🚶/🚇/🚕 if the travel time didn't change
     }
     currentDay.stops[editingIndex] = stop;
   }
@@ -314,6 +331,12 @@ function planChanges(changedStop) {
     } else {
       // Flexible and bonus stops move later, just enough to fit
       moves.push({ stop: stop, newTime: toTime(ready) });
+      if (stop.closes && ready + stop.duration > toMinutes(stop.closes)) {
+        const open = toMinutes(stop.closes) - ready; // minutes before it closes
+        notes.push(open > 0
+          ? `🕔 ${stop.name} closes at ${stop.closes}, so you'd only get ${open} min there.`
+          : `🕔 ${stop.name} would already be closed (closes at ${stop.closes}). Maybe move it to another day?`);
+      }
       ready = ready + stop.duration + stop.travel;
     }
   }
@@ -350,6 +373,9 @@ function showSuggestions(changedStop, plan) {
     html += `<button onclick="hideSuggestions()">No thanks, I'll adjust it myself</button>`;
   } else {
     html += `<button onclick="hideSuggestions()">OK</button>`;
+  }
+  if (planSqueeze(changedStop)) {
+    html += `<button onclick="showSqueeze()">✂️ Make it fit</button>`;
   }
 
   suggestionsBox.innerHTML = html;

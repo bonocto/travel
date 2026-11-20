@@ -47,6 +47,25 @@
   <!-- Screen 2: the trip and its days -->
   <section id="trip-section" hidden>
     <div id="trip-view"></div>
+    <details id="hotel-box">
+      <summary>🏨 Hotel &amp; day times</summary>
+      <form id="hotel-form">
+        <label>Hotel name
+          <input id="hotel-name" type="text" placeholder="Hotel Indigo" required>
+        </label>
+        <label>Hotel address
+          <input id="hotel-address" type="text">
+        </label>
+        <label>Leave at
+          <input id="hotel-leave" type="time" required>
+        </label>
+        <label>Back by
+          <input id="hotel-back" type="time" required>
+        </label>
+        <button type="submit">Add to every day</button>
+        <p id="hotel-result" class="small"></p>
+      </form>
+    </details>
     <button class="nav-button" onclick="exportTrip()">📤 Export trip (backup / AirDrop)</button>
     <button class="nav-button" onclick="chooseImportFile()">📥 Import a trip backup</button>
     <button id="new-trip-button">Start a new trip</button>
@@ -56,10 +75,17 @@
   <section id="day-view" hidden>
     <button id="back-button">← All days</button>
     <h2 id="day-title"></h2>
+    <div id="now-next" hidden></div>
+    <div id="layout-switch">
+      <button id="list-button" onclick="setLayout('list')">☰ List</button>
+      <button id="calendar-button" onclick="setLayout('calendar')">🗓️ Calendar</button>
+    </div> 
+    <p id="calendar-hint" class="small" hidden>Tap an empty time to add a stop · hold &amp; drag to move · × to delete</p>
     <div id="day-map" hidden></div>
     <p id="map-hint" class="small">Tip: give a stop an address (or a real place name) and tap 🔍 Find on map to see it here.</p>
     <div id="suggestions" hidden></div>
     <div id="stop-list"></div>
+    <div id="calendar-view" hidden></div>
     <div id="history-area"></div>
 
     <details id="add-stop">
@@ -80,6 +106,9 @@
         </label>
         <label>End time
           <input id="stop-end" type="time" required>
+        </label>
+        <label>Closes at (optional)
+          <input id="stop-closes" type="time">
         </label>
         <label>Travel to next stop (minutes)
           <input id="stop-travel" type="number" min="0" step="5" value="15">
@@ -166,6 +195,7 @@
 
   <!-- Bottom menu -->
   <nav id="bottom-nav" hidden>
+    <button class="tab" data-screen="today" onclick="openToday()">📍<span>Today</span></button>
     <button class="tab" data-screen="trip-section" onclick="showTrip()">🗓️<span>Days</span></button>
     <button class="tab" data-screen="places-view" onclick="openPlaces()">⭐<span>Places</span></button>
     <button class="tab" data-screen="wishlist-view" onclick="openWishlist()">🛍️<span>Don't Forget</span></button>
@@ -188,6 +218,10 @@
   <script src="photos.js"></script>
   <script src="places.js"></script>
   <script src="map.js"></script>
+  <script src="travel.js"></script>
+  <script src="hotel.js"></script>
+  <script src="calendar.js"></script>
   <script src="backup.js"></script>
+  <script src="today.js"></script>
 </body>
 </html>

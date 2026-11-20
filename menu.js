@@ -16,8 +16,11 @@ function updateMenu(screenId) {
   bottomNav.hidden = screenId === "new-trip";
   quickAddButton.hidden = !quickAddForms[screenId];
 
-  // A single day belongs to the Days tab
-  const tabScreen = screenId === "day-view" ? "trip-section" : screenId;
+  // A single day belongs to the Days tab (or the Today tab, if it's today)
+  let tabScreen = screenId;
+  if (screenId === "day-view") {
+    tabScreen = isTodayOpen() ? "today" : "trip-section";
+  }
   for (const tab of document.querySelectorAll(".tab")) {
     tab.classList.toggle("active", tab.dataset.screen === tabScreen);
   }
