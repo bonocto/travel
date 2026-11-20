@@ -8,7 +8,7 @@ const MAP_CACHE = "farefaren-maps";
 const APP_FILES = [
   "./", "index.html", "style.css", "manifest.json", "icon.png",
   "app.js", "menu.js", "wishlist.js", "photos.js", "places.js", "map.js", "travel.js",
-  "backup.js", "today.js", "hotel.js", "calendar.js", "offline.js",
+  "backup.js", "today.js", "hotel.js", "calendar.js", "offline.js", "whatnow.js", "shops.js", "start.js",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
 ];

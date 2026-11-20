@@ -10,7 +10,8 @@
   <link rel="apple-touch-icon" href="icon.png">
   <meta name="apple-mobile-web-app-title" content="Farefarren">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="theme-color" content="#f6f1e4">
+  <meta name="theme-color" content="#f6f1e4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1c1b18" media="(prefers-color-scheme: dark)">
 
   <!-- Leaflet map library, loaded from a CDN -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -77,6 +78,7 @@
   <section id="day-view" hidden>
     <button id="back-button">← All days</button>
     <h2 id="day-title"></h2>
+    <input id="day-focus" type="text" placeholder="✏️ Give this day a theme, e.g. Sentosa day">
     <div id="now-next" hidden></div>
     <div id="layout-switch">
       <button id="list-button" onclick="setLayout('list')">☰ List</button>
@@ -175,22 +177,30 @@
     <p class="small">Saved places that aren't in a day yet.</p>
     <div id="place-list"></div>
 
+    
     <details id="add-place">
-      <summary>+ Save a place</summary>
+      <summary id="place-form-title">+ Save a place</summary>
       <form id="place-form">
         <label>Place name
           <input id="place-name" type="text" placeholder="Little bookstore" required>
         </label>
-        <label>Address
+        <label>Address (tip: copy it from Google Maps, with the postal code)
           <input id="place-address" type="text">
         </label>
+        <button type="button" onclick="previewPlacePin()">🔍 Find on map</button>
+        <div id="place-map"></div>
+        <p id="place-pin-status" class="small">Tap the map to place the pin yourself.</p>
         <label>About how long (minutes)
           <input id="place-duration" type="number" min="5" step="5" value="45" required>
+        </label>
+        <label>Closes at (optional)
+          <input id="place-closes" type="time">
         </label>
         <label>Notes
           <textarea id="place-notes" rows="2"></textarea>
         </label>
-        <button type="submit">Save place</button>
+        <button type="submit" id="place-submit">Save place</button>
+        <button type="button" id="place-cancel" onclick="resetPlaceForm()" hidden>Cancel</button>
       </form>
     </details>
   </section>
@@ -224,7 +234,10 @@
   <script src="hotel.js"></script>
   <script src="calendar.js"></script>
   <script src="offline.js"></script>
+  <script src="whatnow.js"></script>
+  <script src="shops.js"></script>
   <script src="backup.js"></script>
   <script src="today.js"></script>
+  <script src="start.js"></script>
 </body>
 </html>

@@ -89,11 +89,36 @@ function showTrip() {
   html += `<p>${trip.destination}</p>`;
   for (let i = 0; i < trip.days.length; i++) {
     const day = trip.days[i];
-    html += `<button class="day-button" onclick="openDay(${i})">Day ${day.number} — ${day.label}</button>`;
+    html += dayButton(day, i);
   }
   tripView.innerHTML = html;
   showBackupStatus();
   showScreen("trip-section");
+}
+
+// 7c. One day on the trip screen: its theme, how many stops, and from when to when
+function dayButton(day, i) {
+  const isToday = day.date === todayDate();
+  const visits = day.stops.filter((stop) => !stop.hotel).length;
+
+  let summary = "Nothing planned yet";
+  if (day.stops.length > 0) {
+    const times = day.stops.map((stop) => toMinutes(stop.time));
+    const ends = day.stops.map((stop) => toMinutes(stop.time) + stop.duration);
+    summary = `${visits} stop${visits === 1 ? "" : "s"} · ${toTime(Math.min(...times))}–${toTime(Math.max(...ends))}`;
+  }
+
+  let html = `<button class="day-button ${isToday ? "today" : ""}" onclick="openDay(${i})">`;
+  html += `<span class="day-number">Day ${day.number}</span> ${day.label}`;
+  if (isToday) {
+    html += `<span class="today-badge">Today</span>`;
+  }
+  if (day.focus) {
+    html += `<span class="day-focus">${day.focus}</span>`;
+  }
+  html += `<span class="day-summary">${summary}</span>`;
+  html += `</button>`;
+  return html;
 }
 
 // 7b. "Last backup: 3 days ago" on the trip screen (orange when it's time for a new one)
@@ -120,6 +145,7 @@ function showBackupStatus() {
 function openDay(i) {
   currentDay = trip.days[i];
   dayTitle.textContent = `Day ${currentDay.number} — ${currentDay.label}`;
+  document.getElementById("day-focus").value = currentDay.focus || "";
   hideSuggestions();
   resetStopForm();
   showScreen("day-view"); // show the screen first, so the map knows its size
@@ -186,6 +212,8 @@ function showStops() {
       }
     }
     html += wishlistForStop(stop);
+    html += nearbySaved(stop);
+    html += shopsHtml(stop, i);
     const previous = stops[i - 1]; // undefined for the first stop
     const fromText = previous ? `from ${previous.name}` : "from where I am";
     html += `<a class="directions" href="${appleMapsLink(stop, previous)}" target="_blank">🧭 Directions ${fromText}</a><br>`;
@@ -204,10 +232,10 @@ function showStops() {
       const spare = toMinutes(next.time) - arrive;
       let gapText = `${stop.travelIcon || "🚶"} ${stop.travel} min to next stop`;
       if (spare > 0) {
-        gapText += ` · ${spare} min free`;
+        gapText += ` · ${niceLength(spare)} free`;
       }
       if (spare < 0) {
-        gapText = `<span class="warning">⚠️ ${gapText} · ${-spare} min short</span>`;
+        gapText = `<span class="warning">⚠️ ${gapText} · ${niceLength(-spare)} short</span>`;
       }
       
         html += `<div class="gap">${gapText}${estimateButtons(i, stop, next)}</div>`;
@@ -302,6 +330,8 @@ stopForm.addEventListener("submit", function (event) {
     if (oldStop.hotel) {
       stop.hotel = oldStop.hotel; // keep it marked as a hotel stop
     }
+    stop.shops = oldStop.shops;         // keep its shop list…
+    stop.directory = oldStop.directory; // …and directory link
     if (oldStop.travelIcon && oldStop.travel === stop.travel) {
       stop.travelIcon = oldStop.travelIcon; // keep 🚶/🚇/🚕 if the travel time didn't change
     }
@@ -480,11 +510,10 @@ cancelEditButton.addEventListener("click", function () {
   resetStopForm();
 });
 
-// 20. When the page opens: show the saved trip, or the new trip form
-const savedTrip = localStorage.getItem("trip");
-if (savedTrip) {
-  trip = JSON.parse(savedTrip);
-  showTrip();
-} else {
-  showScreen("new-trip");
-}
+// Save the day's theme when you type one
+document.getElementById("day-focus").addEventListener("change", function () {
+  currentDay.focus = this.value.trim();
+  saveTrip();
+});
+
+// 20. Starting the app now happens in start.js (loaded last)

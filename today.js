@@ -116,6 +116,7 @@ function showNowNext() {
       : `<p>Nothing planned today. Enjoy wandering! 🌿</p>`;
   }
 
+  html += `<button class="what-now-button" onclick="whatNow(false)">🧭 What now?</button>`;
   box.innerHTML = html;
   box.hidden = false;
 }
@@ -268,7 +269,7 @@ function acceptSqueeze() {
 
   for (const stop of plan.skips) {
     currentDay.stops.splice(currentDay.stops.indexOf(stop), 1);
-    getPlaces().push({ name: stop.name, address: stop.address, duration: stop.duration, notes: stop.notes });
+    getPlaces().push(placeFromStop(stop));
   }
   for (const change of plan.shortenings) {
     change.stop.duration = change.newDuration;

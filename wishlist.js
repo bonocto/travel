@@ -200,7 +200,7 @@ function wishlistForStop(stop) {
   let html = "";
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    if (!item.bought && soldAt(item, stop.name)) {
+    if (!item.bought && (soldAt(item, stop.name) || soldInShops(item, stop))) {
         html += `<div class="reminder">`;
       if (item.photo) {
         html += `<img class="reminder-photo" src="${item.photo}" alt="">`;

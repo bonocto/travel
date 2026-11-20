@@ -464,3 +464,117 @@ body:has(input:focus, select:focus, textarea:focus) #quick-add {
 /* 20. Backup reminder and version */
 .backup-due { color: #a8641e; font-weight: 600; }
 #app-status { margin-top: 24px; text-align: center; }
+
+/* 21. What now? and While you're here */
+.what-now-button {
+  display: block;
+  width: 100%;
+  margin: 14px 0 0;
+  color: var(--olive);
+  background: white;
+  border: none;
+}
+.what-now-option {
+  margin: 10px 0;
+  padding: 12px 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.what-now-option button { margin-top: 8px; }
+.nearby { margin-top: 8px; padding: 6px 10px; font-size: 13px; color: var(--olive); background: #f1f3e6; border-radius: 10px; }
+#find-pins-button { margin-bottom: 12px; }
+
+
+/* 22. Little map in the Places form */
+#place-map {
+  position: relative;
+  z-index: 0;
+  height: 200px;
+  margin: 10px 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+
+/* 23. My shops here */
+.stop .shops-box {
+  margin: 10px 0 0;
+  padding: 0 12px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+.shop-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 15px;
+  border-bottom: 1px solid var(--line);
+}
+.shop-row input { width: 20px; height: 20px; min-height: 0; margin: 0; flex-shrink: 0; accent-color: var(--olive); }
+.shop-row.done .shop-name { text-decoration: line-through; opacity: 0.5; }
+.shop-unit { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--olive); white-space: nowrap; }
+.star-button { margin: 0; padding: 0 4px; font-size: 16px; background: none; border: none; }
+.shops-box textarea { margin-top: 10px; font-size: 14px; }
+
+/* 24. Day cards on the trip screen */
+.day-button .day-number { font-family: "Iowan Old Style", "Palatino", Georgia, serif; font-size: 19px; color: var(--olive); }
+.day-focus { display: block; margin-top: 4px; font-size: 15px; font-weight: 600; }
+.day-summary { display: block; margin-top: 2px; font-size: 13px; font-weight: 400; color: var(--muted); }
+.today-badge {
+  margin-left: 8px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: white;
+  background: var(--olive);
+  border-radius: 999px;
+  vertical-align: 2px;
+}
+.day-button.today { border: 2px solid var(--olive); }
+#day-focus {
+  min-height: 0;
+  margin: -4px 0 12px;
+  padding: 4px 0;
+  font-style: italic;
+  color: var(--olive);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--line);
+  border-radius: 0;
+}
+
+/* 25. Dark mode: follows your iPhone/Mac setting */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cream: #1c1b18;
+    --card: #27261f;
+    --soft: #34322b;
+    --line: #3b3932;
+    --charcoal: #ece6d6; /* the main text colour, now light */
+    --muted: #a39d8f;
+    --blue: #8fb0d4;
+    --red: #ff7a6b;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  }
+  /* Olive text needs to be a bit lighter to be readable on dark */
+  h1, summary, #back-button, section > button:first-child, #suggestions h3, .tab.active,
+  .nearby, .shop-unit, .day-button .day-number, #day-focus, .what-now-button, .late-button {
+    color: #a9bb6c;
+  }
+  input, select, textarea { color: var(--charcoal); background: #23221e; }
+  #day-focus { background: transparent; }
+  .what-now-button, .late-button { background: var(--card); }
+  #suggestions { background: #2f2d26; }
+  .nearby { background: #2c3023; }
+  .gap, .estimate-button { border-color: var(--line); }
+  s { color: #7d786c; }
+  .fixed { background: #55524a; }
+  .stop:has(.badge.fixed) { border-left-color: #8a867a; }
+  .backup-due { color: #e0a050; }
+  #bottom-nav { background: rgba(36, 35, 31, 0.94); }
+  .leaflet-tile { filter: brightness(0.8); } /* softer maps at night */
+}
