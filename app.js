@@ -85,7 +85,7 @@ function makeDays(start, end) {
 
 // 7. Show the trip, with a button for each day
 function showTrip() {
-  let html = `<h2>${trip.name}</h2>`;
+  let html = `<h2 onclick="renameTrip()">${trip.name} ✏️</h2>`;
   html += `<p>${trip.destination}</p>`;
   html += countdownHtml();
   for (let i = 0; i < trip.days.length; i++) {
@@ -139,6 +139,16 @@ function showBackupStatus() {
   } else {
     status.textContent = `💾 Last backup: ${when}`;
     status.className = "small";
+  }
+}
+
+// 7d. Tap the trip's name to rename it
+function renameTrip() {
+  const name = prompt("Trip name:", trip.name);
+  if (name && name.trim()) {
+    trip.name = name.trim();
+    saveTrip();
+    showTrip();
   }
 }
 
@@ -274,7 +284,7 @@ function showStops() {
     if (next) {
       const arrive = end + stop.travel;
       const spare = toMinutes(next.time) - arrive;
-      let gapText = `${stop.travelIcon || "🚶"} ${stop.travel} min to next stop`;
+      let gapText = `${stop.travelIcon || "🚶"} ${niceLength(stop.travel)} to next stop`;
       if (spare > 0) {
         gapText += ` · ${niceLength(spare)} free`;
       }
