@@ -117,8 +117,8 @@
         <label>Closes at (optional)
           <input id="stop-closes" type="time">
         </label>
-        <label>Travel to next stop (minutes)
-          <input id="stop-travel" type="number" min="0" step="5" value="15">
+        <label>Travel to next stop
+          <input id="stop-travel" type="text" value="15 min" placeholder="e.g. 15 min or 1 h 5 min">
         </label>
         <label>Address
           <input id="stop-address" type="text">
@@ -193,8 +193,8 @@
         <button type="button" onclick="previewPlacePin()">🔍 Find on map</button>
         <div id="place-map"></div>
         <p id="place-pin-status" class="small">Tap the map to place the pin yourself.</p>
-        <label>About how long (minutes)
-          <input id="place-duration" type="number" min="5" step="5" value="45" required>
+        <label>About how long
+          <input id="place-duration" type="text" value="45 min" placeholder="e.g. 45 min or 1 h 30 min" required>
         </label>
         <label>Opens at (optional)
           <input id="place-opens" type="time">

@@ -165,6 +165,39 @@ function toTime(minutes) {
   return String(hours).padStart(2, "0") + ":" + String(mins).padStart(2, "0");
 }
 
+
+// 9b. Read a length typed any way you like: "90", "90 min", "1 h 30", "1hr 30mins", "1.5 hours", "1:30"
+//     Gives back minutes, or null if it can't make sense of it
+function parseDuration(text) {
+  const t = text.toLowerCase().replace(",", ".").trim();
+  if (/^\d+(\.\d+)?$/.test(t)) {
+    return Math.round(Number(t)); // just a number: minutes
+  }
+  const clock = t.match(/^(\d+):(\d{1,2})$/);
+  if (clock) {
+    return Number(clock[1]) * 60 + Number(clock[2]); // "1:30"
+  }
+  const hours = t.match(/(\d+(?:\.\d+)?)\s*(hours|hour|hrs|hr|h)(?![a-z])/);
+  const mins = t.match(/(\d+)\s*(minutes|minute|mins|min|m)(?![a-z])/);
+  if (!hours && !mins) {
+    return null;
+  }
+  let total = 0;
+  if (hours) {
+    total += Number(hours[1]) * 60;
+    if (!mins) {
+      const after = t.slice(hours.index + hours[0].length).match(/^\s*(\d+)/);
+      if (after) {
+        total += Number(after[1]); // "1 h 30" — the 30 is minutes
+      }
+    }
+  }
+  if (mins) {
+    total += Number(mins[1]);
+  }
+  return Math.round(total);
+}
+
 // 10. Show the open day's stops as a timeline (and on the map)
 function showStops() {
   const stops = currentDay.stops;
@@ -279,7 +312,7 @@ function editStop(i) {
   document.getElementById("stop-type").value = stop.type;
   document.getElementById("stop-time").value = stop.time;
   document.getElementById("stop-end").value = toTime(toMinutes(stop.time) + stop.duration);  
-  document.getElementById("stop-travel").value = stop.travel;
+  document.getElementById("stop-travel").value = niceLength(stop.travel);
   document.getElementById("stop-address").value = stop.address;
   document.getElementById("stop-notes").value = stop.notes;
   document.getElementById("stop-closes").value = stop.closes || "";
@@ -317,12 +350,18 @@ stopForm.addEventListener("submit", function (event) {
     return;
   }
 
+    const travel = parseDuration(document.getElementById("stop-travel").value || "0");
+  if (travel === null) {
+    alert("I couldn't read the travel time. Try something like 15 min or 1 h 5 min.");
+    return;
+  }
+
   const stop = {
     name: document.getElementById("stop-name").value,
     type: document.getElementById("stop-type").value,
     time: document.getElementById("stop-time").value,
     duration: duration,
-    travel: Number(document.getElementById("stop-travel").value),
+    travel: travel,
     address: document.getElementById("stop-address").value,
     notes: document.getElementById("stop-notes").value,
     closes: document.getElementById("stop-closes").value,

@@ -244,7 +244,7 @@ function editPlace(i) {
   placeFormPin = null;
   document.getElementById("place-name").value = place.name;
   document.getElementById("place-address").value = place.address;
-  document.getElementById("place-duration").value = place.duration;
+  document.getElementById("place-duration").value = niceLength(place.duration);
   document.getElementById("place-closes").value = place.closes || "";
   document.getElementById("place-opens").value = place.opens || "";
   document.getElementById("place-notes").value = place.notes;
@@ -351,10 +351,16 @@ async function previewPlacePin() {
 placeForm.addEventListener("submit", async function (event) {
   event.preventDefault();
 
+  const duration = parseDuration(document.getElementById("place-duration").value);
+  if (!duration) {
+    alert("I couldn't read how long. Try something like 45 min or 1 h 30 min.");
+    return;
+  }
+
   const details = {
     name: document.getElementById("place-name").value,
     address: document.getElementById("place-address").value,
-    duration: Number(document.getElementById("place-duration").value),
+    duration: duration,
     closes: document.getElementById("place-closes").value,
     opens: document.getElementById("place-opens").value,
     notes: document.getElementById("place-notes").value,
