@@ -1,6 +1,6 @@
 // offline.js — switches on offline mode and shows the app's version
 
-const appVersion = "12"; // ✏️ change this when you upload a new version (it's just a label)
+const appVersion = "14"; // ✏️ change this when you upload a new version (it's just a label)
 
 // 1. Start the offline helper (sw.js). It only works on https or localhost.
 if ("serviceWorker" in navigator) {

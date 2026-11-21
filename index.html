@@ -111,6 +111,9 @@
         <label>End time
           <input id="stop-end" type="time" required>
         </label>
+        <label>Opens at (optional)
+          <input id="stop-opens" type="time">
+        </label>
         <label>Closes at (optional)
           <input id="stop-closes" type="time">
         </label>
@@ -174,7 +177,7 @@
   <section id="places-view" hidden>
     <button onclick="showTrip()">← Back to trip</button>
     <h2>⭐ Places I'd Love to Visit</h2>
-    <p class="small">Saved places that aren't in a day yet.</p>
+    <p class="small">Everywhere you'd love to go, and where it fits in your trip.</p>
     <div id="place-list"></div>
 
     
@@ -192,6 +195,9 @@
         <p id="place-pin-status" class="small">Tap the map to place the pin yourself.</p>
         <label>About how long (minutes)
           <input id="place-duration" type="number" min="5" step="5" value="45" required>
+        </label>
+        <label>Opens at (optional)
+          <input id="place-opens" type="time">
         </label>
         <label>Closes at (optional)
           <input id="place-closes" type="time">
@@ -236,6 +242,7 @@
   <script src="offline.js"></script>
   <script src="whatnow.js"></script>
   <script src="shops.js"></script>
+  <script src="clusters.js"></script>
   <script src="backup.js"></script>
   <script src="today.js"></script>
   <script src="start.js"></script>

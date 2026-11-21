@@ -87,6 +87,7 @@ function makeDays(start, end) {
 function showTrip() {
   let html = `<h2>${trip.name}</h2>`;
   html += `<p>${trip.destination}</p>`;
+  html += countdownHtml();
   for (let i = 0; i < trip.days.length; i++) {
     const day = trip.days[i];
     html += dayButton(day, i);
@@ -198,11 +199,21 @@ function showStops() {
     html += `<div><span class="stop-time">${timeText}</span>`;
     html += `<span class="badge ${stop.type}">${stop.type}</span></div>`;
     html += `<div class="stop-name">${i + 1}. ${stop.name}</div>`;
+    if (stop.visited) {
+      html += `<div class="small">✅ Visited</div>`;
+    }
     if (stop.address) {
       html += `<div class="small">📍 ${stop.address}</div>`;
     }
     if (stop.notes) {
       html += `<div class="small">📝 ${stop.notes}</div>`;
+    }
+    if (stop.opens) {
+      if (toMinutes(stop.time) < toMinutes(stop.opens)) {
+        html += `<div class="small warning">🕙 Opens at ${stop.opens}, but you'd arrive at ${stop.time}</div>`;
+      } else {
+        html += `<div class="small">🕙 Opens at ${stop.opens}</div>`;
+      }
     }
     if (stop.closes) {
       if (end > toMinutes(stop.closes)) {
@@ -272,6 +283,7 @@ function editStop(i) {
   document.getElementById("stop-address").value = stop.address;
   document.getElementById("stop-notes").value = stop.notes;
   document.getElementById("stop-closes").value = stop.closes || "";
+  document.getElementById("stop-opens").value = stop.opens || "";
   setFormPosition(stop.lat, stop.lng);
 
   stopFormTitle.textContent = `Edit: ${stop.name}`;
@@ -314,6 +326,7 @@ stopForm.addEventListener("submit", function (event) {
     address: document.getElementById("stop-address").value,
     notes: document.getElementById("stop-notes").value,
     closes: document.getElementById("stop-closes").value,
+    opens: document.getElementById("stop-opens").value,
     lat: formLat,
     lng: formLng,
   };
@@ -462,6 +475,7 @@ function remember(label) {
     label: label,
     at: new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }),
     stops: JSON.stringify(currentDay.stops), // a snapshot of the day before the change
+    places: JSON.stringify(trip.places || []), // …and of Places, since stops can move to/from there
   });
   if (currentDay.history.length > 20) {
     currentDay.history.shift(); // only keep the last 20 changes
@@ -474,6 +488,9 @@ function undo() {
     return;
   }
   currentDay.stops = JSON.parse(last.stops);
+  if (last.places) {
+    trip.places = JSON.parse(last.places); // put Places back the way it was too
+  }
   hideSuggestions();
   resetStopForm();
   saveTrip();

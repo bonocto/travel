@@ -44,12 +44,36 @@ async function findPin(name, address) {
   return null;
 }
 
-// 5. Show the saved places, each with an "Add to a day" option
+// 5. The Places screen: a summary, nearby groups, places not in a day yet,
+//    and every stop that's already in a day (with ✓ ticks for where you've been)
 function showPlaces() {
   const places = getPlaces();
+
+  // Every stop already in a day (not the hotel ones), in day and time order
+  const planned = [];
+  trip.days.forEach(function (day, d) {
+    day.stops.forEach(function (stop, s) {
+      if (!stop.hotel) {
+        planned.push({ day: day, d: d, s: s, stop: stop });
+      }
+    });
+  });
+  planned.sort((a, b) => a.d - b.d || toMinutes(a.stop.time) - toMinutes(b.stop.time));
+
+  // Summary: "12 places · 5 visited ✓ · 3 not added to a day yet"
+  const total = places.length + planned.length;
+  const visited = places.filter((place) => place.visited).length + planned.filter((p) => p.stop.visited).length;
+  let html = `<p class="small">${total} place${total === 1 ? "" : "s"} · ${visited} visited ✓ · ${places.length} not added to a day yet</p>`;
+
+  html += clustersHtml();
+
+  // Places that aren't in a day yet
+  html += `<h3>⭐ Not added to a day yet</h3>`;
   if (places.length === 0) {
-    placeList.innerHTML = "<p>No saved places yet.</p>";
-    return;
+    html += `<p class="small">Nothing here. Everything you've saved is in a day! 🎉</p>`;
+  }
+  if (places.some((place) => !place.lat)) {
+    html += `<button id="find-pins-button" onclick="findMissingPins()">📍 Find missing map pins</button>`;
   }
 
   // The list of days, for the "Day" drop-downs
@@ -59,18 +83,21 @@ function showPlaces() {
     dayOptions += `<option value="${d}">Day ${day.number} — ${day.label}</option>`;
   }
 
-  let html = "";
-  if (places.some((place) => !place.lat)) {
-    html += `<button id="find-pins-button" onclick="findMissingPins()">📍 Find missing map pins</button>`;
-  }
   for (let i = 0; i < places.length; i++) {
     const place = places[i];
-    html += `<div class="item">`;
-    html += `<div class="stop-name">${place.name}</div>`;
+    html += `<div class="item ${place.visited ? "visited" : ""}">`;
+    html += `<label class="check">`;
+    html += `<input type="checkbox" onchange="togglePlaceVisited(${i})" ${place.visited ? "checked" : ""}>`;
+    html += `<span class="item-name">${place.name}</span>`;
+    html += `</label>`;
+    html += `<div class="small">📅 Not added to a day yet</div>`;
     if (place.address) {
       html += `<div class="small">📍 ${place.address}</div>`;
     }
     html += `<div class="small">⏱️ About ${place.duration} min</div>`;
+    if (place.opens) {
+      html += `<div class="small">🕙 Opens at ${place.opens}</div>`;
+    }
     if (place.closes) {
       html += `<div class="small">🕔 Closes at ${place.closes}</div>`;
     }
@@ -95,8 +122,37 @@ function showPlaces() {
     html += `<button class="delete-button" onclick="deletePlace(${i})">Delete</button>`;
     html += `</div>`;
   }
+
+  // Places already in a day: tick them off, or tap the day to open it
+  if (planned.length > 0) {
+    html += `<h3>📅 Already in a day</h3>`;
+    for (const p of planned) {
+      html += `<div class="shop-row ${p.stop.visited ? "done" : ""}">`;
+      html += `<input type="checkbox" onchange="toggleStopVisited(${p.d}, ${p.s})" ${p.stop.visited ? "checked" : ""}>`;
+      html += `<span class="shop-name">${p.stop.name}</span>`;
+      html += `<button class="day-link" onclick="openDay(${p.d})">Day ${p.day.number} · ${p.stop.time}</button>`;
+      html += `</div>`;
+    }
+  }
+
   placeList.innerHTML = html;
 }
+
+// 5b. Tick a place (or a stop in a day) as visited, or untick it
+function togglePlaceVisited(i) {
+  const place = getPlaces()[i];
+  place.visited = !place.visited;
+  saveTrip();
+  showPlaces();
+}
+
+function toggleStopVisited(d, s) {
+  const stop = trip.days[d].stops[s];
+  stop.visited = !stop.visited;
+  saveTrip();
+  showPlaces();
+}
+
 
 // 6. Move a place into a day (it becomes a stop)
 function schedulePlace(i) {
@@ -119,10 +175,12 @@ function schedulePlace(i) {
     address: place.address,
     notes: place.notes,
     closes: place.closes || "",
+    opens: place.opens || "",
     lat: place.lat || null,
     lng: place.lng || null,
     shops: place.shops,
     directory: place.directory,
+    visited: place.visited,
   };
 
   currentDay = trip.days[dayIndex];
@@ -163,6 +221,7 @@ function placeFromStop(stop) {
     lng: stop.lng || null,
     shops: stop.shops,
     directory: stop.directory,
+    visited: stop.visited,
   };
 }
 
@@ -187,6 +246,7 @@ function editPlace(i) {
   document.getElementById("place-address").value = place.address;
   document.getElementById("place-duration").value = place.duration;
   document.getElementById("place-closes").value = place.closes || "";
+  document.getElementById("place-opens").value = place.opens || "";
   document.getElementById("place-notes").value = place.notes;
 
   placeFormTitle.textContent = `Edit: ${place.name}`;
@@ -296,6 +356,7 @@ placeForm.addEventListener("submit", async function (event) {
     address: document.getElementById("place-address").value,
     duration: Number(document.getElementById("place-duration").value),
     closes: document.getElementById("place-closes").value,
+    opens: document.getElementById("place-opens").value,
     notes: document.getElementById("place-notes").value,
   };
 

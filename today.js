@@ -114,7 +114,8 @@ function showNowNext() {
     html += currentDay.stops.length > 0
       ? `<p>All done for today. Rest well! 🌙</p>`
       : `<p>Nothing planned today. Enjoy wandering! 🌿</p>`;
-  }
+      html += tomorrowHtml();
+    }
 
   html += `<button class="what-now-button" onclick="whatNow(false)">🧭 What now?</button>`;
   box.innerHTML = html;
@@ -298,3 +299,42 @@ document.addEventListener("visibilitychange", function () {
     showStops();
   }
 });
+
+// 15. "🌙 Tomorrow": a peek at the next day, shown once today is done
+function tomorrowHtml() {
+  const tomorrow = trip.days[trip.days.indexOf(currentDay) + 1];
+  if (!tomorrow) {
+    return `<p class="small">✈️ That was the last day. Safe travels home!</p>`;
+  }
+  const stops = tomorrow.stops.slice().sort((a, b) => toMinutes(a.time) - toMinutes(b.time));
+  const leave = stops.find((stop) => stop.hotel === "start");
+  const first = stops.find((stop) => !stop.hotel);
+  let text = "🌙 Tomorrow:";
+  if (leave) {
+    text += ` leave the hotel at ${leave.time}.`;
+  }
+  text += first ? ` First stop: ${first.name} at ${first.time}.` : " nothing planned yet.";
+  if (tomorrow.focus) {
+    text += ` (${tomorrow.focus})`;
+  }
+  return `<p class="small">${text}</p>`;
+}
+
+// 16. "✈️ 4 days to go!" on the trip screen
+function countdownHtml() {
+  const first = trip.days[0].date;
+  const last = trip.days[trip.days.length - 1].date;
+  const today = todayDate();
+  const oneDay = 24 * 60 * 60 * 1000;
+  let text;
+  if (today < first) {
+    const daysToGo = Math.round((new Date(first + "T12:00") - new Date(today + "T12:00")) / oneDay);
+    text = daysToGo === 1 ? "✈️ Tomorrow! Pack your bags 🧳" : `✈️ ${daysToGo} days to go!`;
+  } else if (today <= last) {
+    const day = trip.days.find((d) => d.date === today);
+    text = `🌿 Day ${day.number} of ${trip.days.length}. Enjoy!`;
+  } else {
+    text = "🌿 Hope it was a lovely trip!";
+  }
+  return `<p class="countdown">${text}</p>`;
+}

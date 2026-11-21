@@ -54,7 +54,10 @@ function planVisit(place, from, now, next, until) {
   }
   const there = quickestTravel(from, place);
   const back = next && next.lat ? quickestTravel(place, next) : null;
-  const arrive = Math.ceil((now + there.minutes) / 5) * 5;
+  let arrive = Math.ceil((now + there.minutes) / 5) * 5;
+  if (place.opens) {
+    arrive = Math.max(arrive, toMinutes(place.opens)); // not before it opens
+  }
   let latest = until - (back ? back.minutes : 0); // when you must leave to be on time
   if (place.closes) {
     latest = Math.min(latest, toMinutes(place.closes));
@@ -106,7 +109,7 @@ async function whatNow(useMyLocation) {
   let noPin = 0;
   const tooLong = [];
   if (from) {
-    for (const place of getPlaces()) {
+    for (const place of getPlaces().filter((place) => !place.visited)) {
       const visit = planVisit(place, from, now, next, until);
       if (visit === null) {
         noPin++;
@@ -147,6 +150,9 @@ async function whatNow(useMyLocation) {
     html += `</span>`;
     if (visit.buys > 0) {
       html += `<br><span class="small">🛍️ ${visit.buys} thing${visit.buys === 1 ? "" : "s"} on your Don't Forget list here</span>`;
+    }
+    if (visit.place.opens) {
+      html += `<br><span class="small">🕙 Opens at ${visit.place.opens}</span>`;
     }
     if (visit.place.closes) {
       html += `<br><span class="small">🕔 Closes at ${visit.place.closes}</span>`;
@@ -205,7 +211,7 @@ function nearbySaved(stop) {
     return "";
   }
   const close = [];
-  for (const place of getPlaces()) {
+  for (const place of getPlaces().filter((place) => !place.visited)) {
     const estimates = place.lat ? travelEstimates(stop, place) : null;
     const walk = estimates ? estimates.list.find((e) => e.icon === "🚶") : null;
     if (walk && walk.minutes <= 10) {
