@@ -190,8 +190,11 @@ function addFromWhatNow(i) {
     address: place.address,
     notes: place.notes,
     closes: place.closes || "",
+    opens: place.opens || "",
     lat: place.lat,
     lng: place.lng,
+    shops: place.shops,
+    directory: place.directory,
   };
   if (visit.back) {
     stop.travelIcon = visit.back.icon;

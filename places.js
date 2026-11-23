@@ -108,6 +108,7 @@ function showPlaces() {
       html += `<div class="small warning">Not on the map yet, so 🧭 What now? can't suggest it</div>`;
     }
 
+    html += shopsHtml(place, "place-" + i);
     html += `<details><summary class="small-summary">📅 Add to a day</summary>`;
     html += `<label>Day <select id="place-day-${i}">${dayOptions}</select></label>`;
     html += `<label>Start time <input id="place-time-${i}" type="time"></label>`;
@@ -217,6 +218,7 @@ function placeFromStop(stop) {
     duration: stop.duration,
     notes: stop.notes,
     closes: stop.closes || "",
+    opens: stop.opens || "",
     lat: stop.lat || null,
     lng: stop.lng || null,
     shops: stop.shops,

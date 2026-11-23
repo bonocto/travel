@@ -267,7 +267,7 @@ function showStops() {
     }
     html += wishlistForStop(stop);
     html += nearbySaved(stop);
-    html += shopsHtml(stop, i);
+    html += shopsHtml(stop, "stop-" + i);
     const previous = stops[i - 1]; // undefined for the first stop
     const fromText = previous ? `from ${previous.name}` : "from where I am";
     html += `<a class="directions" href="${appleMapsLink(stop, previous)}" target="_blank">🧭 Directions ${fromText}</a><br>`;
