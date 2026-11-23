@@ -227,6 +227,14 @@ function showStops() {
     return;
   }
 
+  // The other days, for "Move to another day"
+  let dayOptions = "";
+  trip.days.forEach(function (day, d) {
+    if (day !== currentDay) {
+      dayOptions += `<option value="${d}">Day ${day.number} — ${day.label}</option>`;
+    }
+  });
+
   let html = "";
   for (let i = 0; i < stops.length; i++) {
     const stop = stops[i];
@@ -274,6 +282,15 @@ function showStops() {
     if (stop.lat) {
       html += `<button class="edit-button" onclick="showOnMap(${i})">📍 Map</button>`;
     }
+
+        if (!stop.hotel && dayOptions) {
+      html += `<details><summary class="small-summary">📅 Move to another day</summary>`;
+      html += `<label>Day <select id="move-day-${i}">${dayOptions}</select></label>`;
+      html += `<label>Start time <input id="move-time-${i}" type="time" value="${stop.time}"></label>`;
+      html += `<button onclick="moveStopToDay(${i})">Move it</button>`;
+      html += `</details>`;
+    }
+
     html += `<button class="edit-button" onclick="editStop(${i})">Edit</button>`;
     html += `<button class="edit-button" onclick="unscheduleStop(${i})">Move to Places</button>`;
     html += `<button class="delete-button" onclick="deleteStop(${i})">Delete</button>`;
@@ -310,6 +327,26 @@ function deleteStop(i) {
   currentDay.stops.splice(i, 1);
   saveTrip();
   showStops();
+}
+
+// 11b. Move a stop to another day (it keeps its shops, notes, pin and everything)
+function moveStopToDay(i) {
+  const stop = currentDay.stops[i];
+  const dayIndex = Number(document.getElementById(`move-day-${i}`).value);
+  const time = document.getElementById(`move-time-${i}`).value;
+  if (!time) {
+    alert("Please choose a start time.");
+    return;
+  }
+  currentDay.stops.splice(i, 1);
+  stop.time = time;
+  delete stop.originalTime; // a fresh start on its new day
+  trip.days[dayIndex].stops.push(stop);
+  saveTrip();
+
+  // Go to the new day, and check whether the stop pushes anything later
+  openDay(dayIndex);
+  showSuggestions(stop, planChanges(stop));
 }
 
 // 12. Edit a stop: fill the form with its details

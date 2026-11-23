@@ -137,6 +137,7 @@ function showPlaces() {
   }
 
   placeList.innerHTML = html;
+  searchShops(); // keep any shop search up to date
 }
 
 // 5b. Tick a place (or a stop in a day) as visited, or untick it

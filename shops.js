@@ -166,3 +166,47 @@ function setDirectory(key) {
   saveTrip();
   refreshShops(key);
 }
+
+
+// 9. Search every shop list in the trip (all days + Places)
+function searchShops() {
+  const query = document.getElementById("shop-search").value.trim().toLowerCase();
+  const results = document.getElementById("shop-results");
+  if (query === "") {
+    results.innerHTML = "";
+    return;
+  }
+
+  let html = "";
+  function addRow(shop, where, button) {
+    html += `<div class="shop-row ${shop.done ? "done" : ""}">`;
+    html += `<span class="shop-name">${shop.star ? "⭐ " : ""}${shop.name}<br><span class="small">📍 ${where}</span></span>`;
+    html += `<span class="shop-unit">${shop.unit}</span>`;
+    html += button;
+    html += `</div>`;
+  }
+
+  // Shops in the stops of every day
+  trip.days.forEach(function (day, d) {
+    for (const stop of day.stops) {
+      for (const shop of stop.shops || []) {
+        if (shop.name.toLowerCase().includes(query)) {
+          addRow(shop, stop.name, `<button class="day-link" onclick="openDay(${d})">Day ${day.number} · ${stop.time}</button>`);
+        }
+      }
+    }
+  });
+
+  // Shops in places that aren't in a day yet
+  for (const place of getPlaces()) {
+    for (const shop of place.shops || []) {
+      if (shop.name.toLowerCase().includes(query)) {
+        addRow(shop, place.name, `<span class="small">⭐ In Places</span>`);
+      }
+    }
+  }
+
+  results.innerHTML = html || `<p class="small">No shops matching "${query}" yet.</p>`;
+}
+
+document.getElementById("shop-search").addEventListener("input", searchShops);
